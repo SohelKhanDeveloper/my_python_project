@@ -14,6 +14,7 @@ FILES = "abcdefgh"
 
 def print_board(board):
     print()
+    print("  Black is Sohel side ")
     print("   a b c d e f g h")
     print("  +" + "--"*8 + "+")
     for row_idx, row in enumerate(board):
@@ -22,9 +23,10 @@ def print_board(board):
         print(row_str + f" {rank}")
     print("  +" + "--"*8 + "+")
     print("   a b c d e f g h")
+    print("  White is Khan side ")
     print()
 def parse_move_input(s):
-    # Accept "e2 e4" or "e2e4"
+    # Accept "e2e4" or "e2e4"
     s = s.strip()
     s = s.replace('-', '').replace('>', '').replace(',', '')
     if ' ' in s:
@@ -45,12 +47,12 @@ def algebraic_to_index(square):
         return None
     col = FILES.index(file)
     r = int(rank)
-    if r < 1 or r > 8:
+    if r < 1 or r > 8: # r means rank variable
         return None
     row = 8 - r
     return (row, col)
 
-def in_bounds(r, c):
+def in_bounds(r, c): # r means row and c means column variable
     return 0 <= r < 8 and 0 <= c < 8
 
 def is_white(piece):
@@ -68,7 +70,7 @@ def valid_pawn_move(board, r1, c1, r2, c2, piece):
     dir_forward = -1 if is_white(piece) else 1  # white moves up (row decreases)
     start_row = 6 if is_white(piece) else 1
     # simple forward one
-    if c1 == c2:
+    if c1 == c2: # same column means forward move
         if r2 == r1 + dir_forward and board[r2][c2] == '.':
             return True
         # two-square from start
@@ -83,7 +85,7 @@ def valid_pawn_move(board, r1, c1, r2, c2, piece):
             return True
     return False
 
-def valid_knight_move(r1, c1, r2, c2):
+def horse_move(r1, c1, r2, c2): # knight move
     dr = abs(r2 - r1)
     dc = abs(c2 - c1)
     return (dr, dc) in [(1, 2), (2, 1)]
@@ -102,18 +104,17 @@ def path_clear(board, r1, c1, r2, c2):
         c += step_c
     return True
 
-def valid_bishop_move(board, r1, c1, r2, c2):
+def valid_bishop_move(board, r1, c1, r2, c2): # diagonal move
     if abs(r2 - r1) == abs(c2 - c1):
         return path_clear(board, r1, c1, r2, c2)
     return False
 
-def valid_rook_move(board, r1, c1, r2, c2):
+def valid_rook_move(board, r1, c1, r2, c2): # straight move
     if r1 == r2 or c1 == c2:
         return path_clear(board, r1, c1, r2, c2)
     return False
 
-def valid_queen_move(board, r1, c1, r2, c2):
-    # combination of rook and bishop
+def valid_queen_move(board, r1, c1, r2, c2): # straight or diagonal   
     if r1 == r2 or c1 == c2:
         return path_clear(board, r1, c1, r2, c2)
     if abs(r2 - r1) == abs(c2 - c1):
@@ -146,7 +147,7 @@ def is_valid_move(board, src, dst, turn):
     if p == 'p':
         valid = valid_pawn_move(board, r1, c1, r2, c2, piece)
     elif p == 'n':
-        valid = valid_knight_move(r1, c1, r2, c2)
+        valid = horse_move(r1, c1, r2, c2)
     elif p == 'b':
         valid = valid_bishop_move(board, r1, c1, r2, c2)
     elif p == 'r':
@@ -179,25 +180,25 @@ def apply_move(board, src, dst):
 
 def main():
     print("Simple Console Chess (no castling / en passant / check detection)")
-    print("Enter moves like: e2 e4  or  e7e5. Type 'quit' to exit.\n")
+    print("Enter moves like: e2e4  or  e7e5. Type 'quit' to exit.\n")
     board = create_board()
     print_board(board)   
-    turn = 'white'
-    move_num = 1
-    while True:
+    turn = 'black'  # Black starts first
+    move_num = 1 # move number
+    while True: # main game loop
         print_board(board)
         prompt = f"{turn.capitalize()} to move (move {move_num}): "
-        user_input = input(prompt).strip()
-        if user_input.lower() in ('quit','exit'):
+        user_input = input(prompt).strip() # get user input
+        if user_input.lower() in ('quit','exit'): # exit game
             print("Game ended.")
             sys.exit(0)
         if user_input.lower() in ('help','?'):
             board = create_board()
-            print("Enter moves like 'e2 e4' or 'g8f6'. 'quit' to exit.")
+            print("Enter moves like 'e2e4' or 'g8f6'. 'quit' to exit.")
             continue
         parsed = parse_move_input(user_input)
         if not parsed:
-            print("Can't parse move. Use format like 'e2 e4' or 'e2e4'.")
+            print("Can't parse move. Use format like 'e2e4' or 'e2e4'.")
             continue
         s_from, s_to = parsed
         src=algebraic_to_index(s_from)
@@ -205,12 +206,12 @@ def main():
         if src is None or dst is None:
             print("Invalid square name. Use a-h and 1-8 (e.g. e2).")
             continue
-        valid, reason = is_valid_move(board, src, dst, turn)
+        valid, reason = is_valid_move(board, src, dst, turn) # validate move
         if not valid:
             print("Invalid move:", reason)
             continue
         captured = apply_move(board, src, dst)
-        if captured != '.':
+        if captured != '.': # capture occurred
             print(f"Captured {captured}!")
         # swap turn
         if turn == 'white':
